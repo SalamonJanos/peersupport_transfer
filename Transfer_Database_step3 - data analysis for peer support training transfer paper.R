@@ -136,7 +136,7 @@ save_as_docx("Table 1. Descriptive statistics" = flex_table2, path = "Descriptiv
 
 ## ---------------------------------------------------- 1. Preliminary analyses -----------------------------------------------------
 
-## -------------------------- 1.1. Internal consistency (alpha and omega) calculation ---------------------------
+## -------------------------- 1.1. Internal consistency (alpha) calculation ---------------------------
 
 # calculating Cronbach alpha for Peer Support
 peer_factor <- '
