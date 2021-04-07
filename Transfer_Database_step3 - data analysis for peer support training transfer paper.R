@@ -10,6 +10,7 @@ library(semTools)  # for calculating Cronbach alpha (reliability function)
 
 library(lme4) # for multilevel models
 library(performance) # for the assessment of regression models performance (check_model function)
+library(sjPlot) # for robust estimation for mixed models (tab_model function)
 
 
 # import database
@@ -182,10 +183,10 @@ corr_input <- c("Management", "timediff",
                 "Cohort", "peer", 
                 "motivation", "use")
 
-work_data3 <- work_data2 %>% 
+work_data2 <- work_data2 %>% 
   mutate_at(vars(Cohort, Management), as.numeric)
 
-corr_table <- work_data3 %>% 
+corr_table <- work_data2 %>% 
   select(., one_of(corr_input))
 
 
@@ -252,7 +253,7 @@ correlation_table <- correlation_table %>%
 
 # 1.2.4. calculating descriptives for final correlation table -------------
 
-all_descriptives <- as.data.frame(psych::describe(work_data3[,corr_input], skew = TRUE))
+all_descriptives <- as.data.frame(psych::describe(work_data2[,corr_input], skew = TRUE))
 descr1 <- all_descriptives[,c("mean", "sd")]
 descr_table1 <- t(descr1)
 
@@ -316,8 +317,11 @@ save_as_docx("Table 2. Descriptive statistics and Spearman bivariate correlation
 
 # 2.1. preparation for main analysis -------------------------------------------
 
+work_data2 <- work_data2 %>% 
+  mutate_at(vars(Cohort, Management), as.numeric)
+
 # standardization of continuous and ordinal variables
-work_data3 <- work_data3 %>% 
+work_data2 <- work_data2 %>% 
   mutate_at(list(std = ~scale(., center = TRUE, scale = TRUE)[, 1]), 
             .vars=c("timediff",
                     "Cohort", "peer",
@@ -329,53 +333,60 @@ work_data3 <- work_data3 %>%
 # Baseline Model (Model 0)
 model0_fit <- lmer(formula = motivation_std ~ 1 + 
                      (1|Company), 
-                   data=work_data3,
+                   data=work_data2,
                    REML = FALSE) #Maximum Likelihood
 
 # Model 1
 model1_fit <- lmer(formula = motivation_std ~ 1 + factor(Management) + 
                      (1|Company), 
-                   data=work_data3,
+                   data=work_data2,
                    REML = FALSE)
 
 # Model 2
 model2_fit <- lmer(formula = motivation_std ~ 1 + factor(Management) + timediff_std + 
                      (1|Company), 
-                   data=work_data3,
+                   data=work_data2,
                    REML = FALSE)
 
 # Model 3
 model3_fit <- lmer(formula = motivation_std ~ 1 + factor(Management) + timediff_std + 
                      peer_std + 
                      (1|Company), 
-                   data=work_data3,
+                   data=work_data2,
                    REML = FALSE)
 
 # Model 4
 model4_fit <- lmer(formula = motivation_std ~ 1 + factor(Management) + timediff_std + 
                      peer_std + Cohort_std + 
                      (1|Company), 
-                   data=work_data3,
+                   data=work_data2,
                    REML = FALSE)
 
 # Model 5
 model5_fit <- lmer(formula = motivation_std ~ 1 + factor(Management) + timediff_std + 
                      peer_std + Cohort_std + peer_std * Cohort_std +
                      (1|Company), 
-                   data=work_data3,
+                   data=work_data2,
                    REML = FALSE)
 summary(model5_fit)
 
-
+# Comparing models
 anova(model0_fit, model1_fit, model2_fit, model3_fit, model4_fit, model5_fit)
 
+# Investigating model assumptions of the final model (Model 5)
 check_model(model5_fit)
 
 library(jtools)
 summ(model5_fit, cluster = "Company", digits = 3)
 
-
-
+# model parameters, cluster robust estimation for mixed models
+tab_model(model5_fit, 
+          show.aic = TRUE, 
+          show.reflvl = TRUE, 
+          string.ci = "95% CI", 
+          vcov.fun = "CR", 
+          vcov.type = "CR2", 
+          vcov.args = list(cluster = model5_fit@frame$Company))
 
 
 
