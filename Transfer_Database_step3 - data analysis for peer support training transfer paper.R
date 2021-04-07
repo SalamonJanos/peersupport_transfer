@@ -17,7 +17,7 @@ library(sjPlot) # for robust estimation for mixed models (tab_model function)
 work_data <- read_sav("data/Transfer_factors.sav")
 
 
-## -------------------------------------------------- Preparation for analysis ---------------------------------------------------
+## ---------------------------------------------- Preparation for analysis ------------------------------------------------
 
 # creating necessary variables for visualization
 work_data2 <- work_data %>% 
@@ -30,7 +30,7 @@ work_data2 <- work_data %>%
                             TRUE ~ as.character(T_colleagues)))
 
 
-## ---------------------------------------------------- Demographics -----------------------------------------------------
+## ---------------------------------------------- Descriptive Statistics --------------------------------------------------
 
 
 # total number of respondents (before filters)
