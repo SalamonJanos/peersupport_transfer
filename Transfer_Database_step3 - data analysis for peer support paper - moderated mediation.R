@@ -77,7 +77,7 @@ work_data2b$Cohort <-
   factor(work_data2b$Cohort, levels=c(0,1,2),
          labels=c("None", 
                   "Some",
-                  "All"))
+                  "Nearly All"))
 
 work_data2b %>%
   group_by(Cohort) %>% 
@@ -582,11 +582,11 @@ work_data4 <- work_data3 %>%
 # following the example from here: https://rpubs.com/cardiomoon/468602
 
 labels=list(X="peer_std",M="motivation_std",Y="use_std",W="Cohort_std")
-pmacroModel(59,labels=labels)
-statisticalDiagram(59,labels=labels)
+pmacroModel(8,labels=labels)
+statisticalDiagram(8,labels=labels)
 
 # Make Regression Equation
-moderator=list(name="Cohort_std",site=list(c("a","b","c")))
+moderator=list(name="Cohort_std",site=list(c("a","c")))
 equations=tripleEquation(labels=labels,moderator=moderator,mode=1)
 cat(equations)
 
@@ -628,7 +628,7 @@ modmedSummaryTable(semfit,mod="Cohort_std", showP = TRUE, boot.ci.type = "bca.si
 
 # 2.2. Moderated mediation figure of manifest variables -------------------
 # Statistical Model
-statisticalDiagram(59,labels=labels,fit=semfit,whatLabel = "std", digits = 3)
+statisticalDiagram(8,labels=labels,fit=semfit,whatLabel = "std", digits = 3)
 
 dev.copy(png,'manifest_modmed_statisticalDiagram.png')
 dev.off()
@@ -651,13 +651,6 @@ work_data4 <- indProd(work_data3, var1 = "Cohort",
                       match = FALSE, meanC = TRUE, residualC = TRUE, doubleMC = TRUE,
                namesProd = c("cp1", "cp2", "cp3"))
 
-work_data5 <- as_tibble(work_data4)
-
-# Double-mean centering / Product indicators of Cohort*Motivation items (cm) 
-work_data5 <- indProd(work_data5, var1 = "Cohort", 
-                      var2 = c("mot26", "mot28", "mot212"),
-                      match = FALSE, meanC = TRUE, residualC = TRUE, doubleMC = TRUE,
-                      namesProd = c("cm1", "cm2", "cm3"))
 
 # 3.2. Define latent moderated mediation model ----------------------------
 
@@ -667,27 +660,25 @@ Motiv =~ mot26 + mot28 + mot212
 Trans =~ use1 + use3 + use5 + use7
 
 CP =~ cp1 + cp2 + cp3     #latent interaction of Cohort and Peer Support 
-CM =~ cm1 + cm2 + cm3     #latent interaction of Cohort and Motivation
 
  # a path
  Motiv ~ a*Peers + z*Cohort_std + aMod*CP
 
  # b path
- Trans ~ b*Motiv + z*Cohort_std + bMod*CM
+ Trans ~ b*Motiv
 
  # cp prime path
  Trans ~ cp*Peers + cpMod*CP
 
-c := cp + (a*b)                                   # total effect without moderator's effects 
-cMod := cpMod + (aMod * bMod)                     # moderator's effects on all paths
-aModb := aMod*b                                   # indirect effect of path b and moderated path a
-abMod := a*bMod                                   # indirect effect of path a and moderated path b
-indirect := (a*b) + (aMod * bMod) + aModb + abMod # indirect effects with moderator's effects
-total := c + cMod + aModb + abMod                 # total effect with moderator's effects
+c := cp + (a*b)                           # total effect without moderator's effects 
+cMod := cpMod + aMod                      # moderator's effects on path a and path c
+aModb := aMod*b                           # indirect effect of path b and moderated path a (joint-significance)
+indirect := (a*b) + aMod                  # indirect effects with moderator's effects
+total := c + cMod + aModb                 # total effect with moderator's effects
 "
 
 # 3.3. Fit latent model ---------------------------------------------------
-fit_1 <- sem(model = mod_1, data = work_data5, std.lv = TRUE, 
+fit_1 <- sem(model = mod_1, data = work_data4, std.lv = TRUE, 
              se = "bootstrap", bootstrap = 1000)
 
 
@@ -707,14 +698,14 @@ round(fitMeasures(fit_1)["pvalue"], 3)
 # For 95% bias-corrected bootstrapped confidence intervals (CIs)
 med_estimates <- parameterestimates(fit_1, boot.ci.type = "bca.simple", standardized = TRUE)
 
-med_estimatesb <- med_estimates[c(17:24, 50:55),c("lhs", "op", "rhs", "label", "est", "pvalue", "ci.lower", "ci.upper", "std.all")]
-med_estimates_nr2 <- med_estimates[c(17:24, 50:55),c("est", "pvalue", "ci.lower", "ci.upper", "std.all")]
-med_estimates_txt2 <- med_estimates[c(17:24, 50:55),c("lhs", "op", "rhs", "label")]
+med_estimatesb <- med_estimates[c(14:19, 39:43),c("lhs", "op", "rhs", "label", "est", "pvalue", "ci.lower", "ci.upper", "std.all")]
+med_estimates_nr2 <- med_estimates[c(14:19, 39:43),c("est", "pvalue", "ci.lower", "ci.upper", "std.all")]
+med_estimates_txt2 <- med_estimates[c(14:19, 39:43),c("lhs", "op", "rhs", "label")]
 
 # add significance stars from p values
 med_estimates_nr2$sign <- stars.pval(med_estimates_nr2$pvalue)
-med_estimates_signb <- med_estimates_nr2[1:14,"sign"]
-med_estimates_nr2 <- med_estimates_nr2[1:14,1:5]
+med_estimates_signb <- med_estimates_nr2[1:11,"sign"]
+med_estimates_nr2 <- med_estimates_nr2[1:11,1:5]
 
 # change class to numeric
 # solution was found here: https://stackoverflow.com/questions/26391921/how-to-convert-entire-dataframe-to-numeric-while-preserving-decimals
@@ -738,8 +729,7 @@ med_estimates_2bx <- med_estimates_2bx %>%
 med_estimates_2bx$`95% CI` <- med_estimates_2bx$`95% CI` %>% 
   paste("[", ., "]")
 
-citation(package = "semTools")
-packageVersion("semTools")
+
 
 # 4. Figures --------------------------------------------------------------
 
@@ -794,10 +784,10 @@ work_data3 %>%
   scale_colour_manual(values=c("#987654", "#000000", "#900009"),
                       name="Colleagues' Participation", 
                       breaks=c("0", "1", "2"), 
-                      labels = c("None", "Some", "All")) +
+                      labels = c("None", "Some", "Nearly All")) +
   scale_linetype_manual(name="Colleagues' Participation", 
                         breaks=c("0", "1", "2"), 
-                        labels = c("None", "Some", "All"),
+                        labels = c("None", "Some", "Nearly All"),
                         values=c("solid", "dotted", "dashed", "longdash"))
 
 ggsave(path = "plots", filename = "Figure_1 - PeerSup-Participation-Motivation.png", width = 9, height = 8)
