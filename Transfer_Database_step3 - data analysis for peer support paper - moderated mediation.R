@@ -733,18 +733,26 @@ med_estimates_2bx$`95% CI` <- med_estimates_2bx$`95% CI` %>%
 
 # 4. Figures --------------------------------------------------------------
 
+
 # 4.1. Preparation for creating figures -----------------------------------
+
+install.packages("extrafont")
+library(extrafont)
+font_import()
+loadfonts(device="win")       #Register fonts for Windows bitmap output
+# fonts()
+
 # Creating theme for figures
 theme_transfer <- theme_classic() +
   theme(
     plot.title = element_text(size = 16,
                               face = "bold",
                               margin = margin(b = 35)),
-    legend.title = element_text(size = 14, color = "#22292F"),
-    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 16, color = "#22292F", face = "bold"),
+    legend.text = element_text(size = 14),
     plot.margin = unit(rep(1, 4), "cm"),
     axis.text = element_text(size = 14, color = "#22292F"),
-    axis.title = element_text(size = 16, hjust = 0.5),
+    axis.title = element_text(size = 18, hjust = 0.5, face = "bold"),
     axis.title.x = element_text(margin = margin(t = 10)),
     axis.title.y = element_text(margin = margin(r = 10)),
     axis.text.y = element_text(margin = margin(r = 5)),
@@ -758,7 +766,8 @@ theme_transfer <- theme_classic() +
     panel.grid.major.y = element_line(color = "#DAE1E7"),
     panel.grid.major.x = element_blank(),
     panel.grid.minor.y = element_blank(),
-    strip.text.x = element_text(size = 12)
+    strip.text.x = element_text(size = 12),
+    text = element_text(family="Times New Roman")
   )
 
 
@@ -778,9 +787,6 @@ work_data3 %>%
   scale_y_continuous(limits = c(1, 7), breaks = seq(1, 7, by = 1)) +
   scale_x_continuous(limits = c(1, 7), breaks = seq(1, 7, by = 1)) +
   theme_transfer +
-  theme(plot.title = element_text(margin = margin(b = 1)),
-        legend.position = c(0.8, 0.25),
-        legend.title = element_text("Colleagues' Participation", size = 14))+
   scale_colour_manual(values=c("#987654", "#000000", "#900009"),
                       name="Colleagues' Participation", 
                       breaks=c("0", "1", "2"), 
@@ -788,7 +794,11 @@ work_data3 %>%
   scale_linetype_manual(name="Colleagues' Participation", 
                         breaks=c("0", "1", "2"), 
                         labels = c("None", "Some", "Nearly All"),
-                        values=c("solid", "dotted", "dashed", "longdash"))
+                        values=c("solid", "dotted", "dashed", "longdash")) +
+  theme(plot.title = element_text(margin = margin(b = 1)),
+        legend.position = c(0.8, 0.25),
+        legend.title = element_text(family="Times New Roman", size = 16))
+        
 
 ggsave(path = "plots", filename = "Figure_1 - PeerSup-Participation-Motivation.png", width = 9, height = 8)
 
