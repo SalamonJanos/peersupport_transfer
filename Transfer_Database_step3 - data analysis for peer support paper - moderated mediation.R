@@ -65,6 +65,15 @@ work_data2 %>%
             Percent = n()/688*100) %>% 
   arrange(desc(Percent))
 
+# reporting average peer support by cohort types
+work_data2 %>% 
+  summarise(mean(peer),
+            sd(peer))
+
+work_data2 %>% 
+  group_by(Cohort) %>%
+  summarise(mean(peer),
+            sd(peer))
 
 
 
@@ -89,7 +98,7 @@ work_data2b %>%
 
 label(work_data2b$timediff) <- "Mean Time lag (SD)"
 label(work_data2b$age) <- "Mean Age (SD)"
-label(work_data2b$Cohort) <- "Colleagues' Participation"
+label(work_data2b$Cohort) <- "Coworkers' Participation"
 label(work_data2b$peer) <- "Mean Peer Support (SD)"
 label(work_data2b$motivation) <- "Mean Motivation to Transfer (SD)"
 label(work_data2b$use) <- "Mean Perceived Training Transfer (SD)"
@@ -358,7 +367,7 @@ combined_tables <- cbind(descr_table1_2, correlation_table)
 
 row.names(combined_tables) <- c("1. Manager", 
                                 "2. Time Lag",
-                                "3. Colleagues' Participation", 
+                                "3. Coworkers' Participation", 
                                 "4. Peer Support",
                                 "5. Motivation to Transfer", 
                                 "6. Perceived Training Transfer"#,
@@ -521,7 +530,7 @@ latent_corr_tab2[upper.tri(latent_corr_tab2)] <- NA
 latent_corr_tab2[4, 4] <- NA
 
 
-row.names(latent_corr_tab2) <- c("1. Management", "2. Time Lag", "3. Colleagues' participation", 
+row.names(latent_corr_tab2) <- c("1. Management", "2. Time Lag", "3. Coworkers' participation", 
                                  "4. Peer Support", "5. Motivation to Transfer",
                                  "6. Perceived Training Transfer")
 
@@ -670,6 +679,7 @@ CP =~ cp1 + cp2 + cp3     #latent interaction of Cohort and Peer Support
  # cp prime path
  Trans ~ cp*Peers + cpMod*CP
 
+ab := a*b                                 # indirect effect of path a and path b (joint-significance)
 c := cp + (a*b)                           # total effect without moderator's effects 
 cMod := cpMod + aMod                      # moderator's effects on path a and path c
 aModb := aMod*b                           # indirect effect of path b and moderated path a (joint-significance)
@@ -698,14 +708,14 @@ round(fitMeasures(fit_1)["pvalue"], 3)
 # For 95% bias-corrected bootstrapped confidence intervals (CIs)
 med_estimates <- parameterestimates(fit_1, boot.ci.type = "bca.simple", standardized = TRUE)
 
-med_estimatesb <- med_estimates[c(14:19, 39:43),c("lhs", "op", "rhs", "label", "est", "pvalue", "ci.lower", "ci.upper", "std.all")]
-med_estimates_nr2 <- med_estimates[c(14:19, 39:43),c("est", "pvalue", "ci.lower", "ci.upper", "std.all")]
-med_estimates_txt2 <- med_estimates[c(14:19, 39:43),c("lhs", "op", "rhs", "label")]
+med_estimatesb <- med_estimates[c(14:19, 39:44),c("lhs", "op", "rhs", "label", "est", "se", "pvalue", "ci.lower", "ci.upper", "std.all")]
+med_estimates_nr2 <- med_estimates[c(14:19, 39:44),c("est", "se", "pvalue", "ci.lower", "ci.upper", "std.all")]
+med_estimates_txt2 <- med_estimates[c(14:19, 39:44),c("lhs", "op", "rhs", "label")]
 
 # add significance stars from p values
 med_estimates_nr2$sign <- stars.pval(med_estimates_nr2$pvalue)
-med_estimates_signb <- med_estimates_nr2[1:11,"sign"]
-med_estimates_nr2 <- med_estimates_nr2[1:11,1:5]
+med_estimates_signb <- med_estimates_nr2[1:12,"sign"]
+med_estimates_nr2 <- med_estimates_nr2[1:12,1:6]
 
 # change class to numeric
 # solution was found here: https://stackoverflow.com/questions/26391921/how-to-convert-entire-dataframe-to-numeric-while-preserving-decimals
@@ -736,7 +746,7 @@ med_estimates_2bx$`95% CI` <- med_estimates_2bx$`95% CI` %>%
 
 # 4.1. Preparation for creating figures -----------------------------------
 
-install.packages("extrafont")
+# install.packages("extrafont")
 library(extrafont)
 font_import()
 loadfonts(device="win")       #Register fonts for Windows bitmap output
@@ -788,10 +798,10 @@ work_data3 %>%
   scale_x_continuous(limits = c(1, 7), breaks = seq(1, 7, by = 1)) +
   theme_transfer +
   scale_colour_manual(values=c("#987654", "#000000", "#900009"),
-                      name="Colleagues' Participation", 
+                      name="Coworkers' Participation", 
                       breaks=c("0", "1", "2"), 
                       labels = c("None", "Some", "Nearly All")) +
-  scale_linetype_manual(name="Colleagues' Participation", 
+  scale_linetype_manual(name="Coworkers' Participation", 
                         breaks=c("0", "1", "2"), 
                         labels = c("None", "Some", "Nearly All"),
                         values=c("solid", "dotted", "dashed", "longdash")) +
