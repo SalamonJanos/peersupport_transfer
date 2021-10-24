@@ -203,11 +203,15 @@ pee35~~ep2*pee35
 pee311~~ep3*pee311
 
 #Reliability
-omega.jr := 
+omega.p := 
 ((p1 + p2 + p3)^2) 
 / 
 ((p1 + p2 + p3)^2 + 
 (ep1 + ep2 + ep3))
+
+#Average Variance Extracted (AVE)
+ave_p := 
+((p1^2) + (p2^2) + (p3^2)) / 3
 
 
 motiv =~ m1*mot26 + m2*mot28 + m3*mot212
@@ -223,6 +227,10 @@ omega.m :=
 / 
 ((m1 + m2 + m3)^2 + 
 (em1 + em2 + em3))
+
+#Average Variance Extracted (AVE)
+ave_m := 
+((m1^2) + (m2^2) + (m3^2)) / 3
 
 
 transfer =~ t1*use1 + t2*use3 + t3*use5 + t4*use7
@@ -241,14 +249,30 @@ omega.t :=
 ((t1 + t2 + t3 + t4)^2 + 
 (et1 + et2 + et3 + et4))
 
+#Average Variance Extracted (AVE)
+ave_t := 
+((t1^2) + (t2^2) + (t3^2) + (t4^2)) / 4
+
+Time =~ timediff
+Mgnt =~ Management
+
 # correlations
 peers ~~ motiv
 peers ~~ transfer
 motiv ~~ transfer
+
+peers ~~ Time
+peers ~~ Mgnt
+motiv ~~ Time
+motiv ~~ Mgnt
+transfer ~~ Time
+transfer ~~ Mgnt
+
 '
 
 fit_transfer <- cfa(transfer_corr_model_rel, data = work_data2, estimator = 'MLR', std.lv = TRUE)
 summary(fit_transfer, fit.measures = TRUE, standardized = TRUE, rsquare=T)
+
 
 
 # Fit indices
@@ -256,6 +280,15 @@ round(fitMeasures(fit_transfer)[c("chisq.scaled", "df.scaled", "cfi.scaled", "tl
                                   "rmsea.scaled", "rmsea.ci.lower.scaled", "rmsea.ci.upper.scaled", "srmr", "aic", "bic")], 3)
 round(fitMeasures(fit_transfer)["pvalue.scaled"], 3)
 
+
+
+# Creating linear model for investigating potential problems of multicollinearity 
+mod1_colltest <- lm(use ~ Cohort + peer + motivation, data = work_data2)
+
+# Investigating multicollinearity
+mod1_colltest %>% 
+  vif()
+# results show no problem of multicollinearity
 
 
 
@@ -440,6 +473,11 @@ Peers ~~ Motiv
 Peers ~~ Trans
 Motiv ~~ Trans
 '
+
+# Heterotrait-monotrait (HTMT) ratio of correlations
+htmt(transfer_corr_model, data = work_data2, sample.cov = NULL, missing = "listwise",
+     ordered = NULL, absolute = TRUE)
+
 
 
 fit_transf_corr <- sem(transfer_corr_model, data = work_data2, estimator = 'MLR')
@@ -663,18 +701,20 @@ work_data4 <- indProd(work_data3, var1 = "Cohort",
 
 # 3.2. Define latent moderated mediation model ----------------------------
 
-mod_1 <- "
+mod_1cont <- "
 Peers =~ pee33 + pee35 + pee311
 Motiv =~ mot26 + mot28 + mot212
 Trans =~ use1 + use3 + use5 + use7
+Time =~ timediff
+Mgnt =~ Management
 
 CP =~ cp1 + cp2 + cp3     #latent interaction of Cohort and Peer Support 
 
  # a path
- Motiv ~ a*Peers + z*Cohort_std + aMod*CP
+ Motiv ~ a*Peers + z*Cohort_std + aMod*CP + Time + Mgnt
 
  # b path
- Trans ~ b*Motiv
+ Trans ~ b*Motiv + Time + Mgnt
 
  # cp prime path
  Trans ~ cp*Peers + cpMod*CP
@@ -687,35 +727,31 @@ indirect := (a*b) + aMod                  # indirect effects with moderator's ef
 total := c + cMod + aModb                 # total effect with moderator's effects
 "
 
-# 3.3. Fit latent model ---------------------------------------------------
-fit_1 <- sem(model = mod_1, data = work_data4, std.lv = TRUE, 
-             se = "bootstrap", bootstrap = 1000)
 
+# 3.3. Fit latent model ---------------------------------------------------
+fit_1cont <- sem(model = mod_1cont, data = work_data4, std.lv = TRUE, 
+                 se = "bootstrap", bootstrap = 1000)
 
 # 3.4. Results of latent model --------------------------------------------
 # Summary
-summary(fit_1, standardized = TRUE, fit.measures = TRUE, ci = TRUE)
+summary(fit_1cont, standardized = TRUE, fit.measures = TRUE, ci = TRUE)
 
 # Fit indices
-round(fitMeasures(fit_1)[c("chisq", "df", "cfi", "tli", "rmsea", "srmr", "aic", "bic")], 3)
-round(fitMeasures(fit_1)["pvalue"], 3)
-
-# For normal confidence intervals (CIs)
-# beta_values <- standardizedSolution(fit_1)
-# beta_values[c(17:24, 50:55),c("lhs", "op", "rhs", "est.std", "pvalue", "ci.lower", "ci.upper")]
+round(fitMeasures(fit_1cont)[c("chisq", "df", "cfi", "tli", "rmsea", "srmr", "aic", "bic")], 3)
+round(fitMeasures(fit_1cont)["pvalue"], 3)
 
 
 # For 95% bias-corrected bootstrapped confidence intervals (CIs)
-med_estimates <- parameterestimates(fit_1, boot.ci.type = "bca.simple", standardized = TRUE)
+med_estimates <- parameterestimates(fit_1cont, boot.ci.type = "bca.simple", standardized = TRUE)
 
-med_estimatesb <- med_estimates[c(14:19, 39:44),c("lhs", "op", "rhs", "label", "est", "se", "pvalue", "ci.lower", "ci.upper", "std.all")]
-med_estimates_nr2 <- med_estimates[c(14:19, 39:44),c("est", "se", "pvalue", "ci.lower", "ci.upper", "std.all")]
-med_estimates_txt2 <- med_estimates[c(14:19, 39:44),c("lhs", "op", "rhs", "label")]
+med_estimatesb <- med_estimates[c(16:25, 54:59),c("lhs", "op", "rhs", "label", "est", "se", "pvalue", "ci.lower", "ci.upper", "std.all")]
+med_estimates_nr2 <- med_estimates[c(16:25, 54:59),c("est", "se", "pvalue", "ci.lower", "ci.upper", "std.all")]
+med_estimates_txt2 <- med_estimates[c(16:25, 54:59),c("lhs", "op", "rhs", "label")]
 
 # add significance stars from p values
 med_estimates_nr2$sign <- stars.pval(med_estimates_nr2$pvalue)
-med_estimates_signb <- med_estimates_nr2[1:12,"sign"]
-med_estimates_nr2 <- med_estimates_nr2[1:12,1:6]
+med_estimates_signb <- med_estimates_nr2[1:16,"sign"]
+med_estimates_nr2 <- med_estimates_nr2[1:16,1:6]
 
 # change class to numeric
 # solution was found here: https://stackoverflow.com/questions/26391921/how-to-convert-entire-dataframe-to-numeric-while-preserving-decimals
@@ -730,13 +766,13 @@ med_estimates_nr2b <- data.frame(lapply(med_estimates_nr2, function(x) gsub("^0\
 
 
 # bind columns that contain text, modified numeric values and significance stars 
-med_estimates_2bx <- cbind(med_estimates_txt2, med_estimates_nr2b, med_estimates_signb)
+med_estimates_2bx_cont <- cbind(med_estimates_txt2, med_estimates_nr2b, med_estimates_signb)
 
-med_estimates_2bx <- med_estimates_2bx %>%
+med_estimates_2bx_cont <- med_estimates_2bx_cont %>%
   unite("95% CI", c(ci.lower, ci.upper), sep = ", ", remove = TRUE) %>%
   unite("standardized", c(std.all, med_estimates_signb), sep = "", remove = TRUE)
 
-med_estimates_2bx$`95% CI` <- med_estimates_2bx$`95% CI` %>% 
+med_estimates_2bx_cont$`95% CI` <- med_estimates_2bx_cont$`95% CI` %>% 
   paste("[", ., "]")
 
 
